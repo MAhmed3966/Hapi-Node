@@ -2,12 +2,19 @@
 
 const Hapi = require("@hapi/hapi");
 
+
 const init = async () => {
   const server = Hapi.Server({
     host: "localhost",
     port: 1234,
   });
-
+// only hapi plugins will registered within the server
+  await server.register({
+    plugin: require('hapi-geo-locate'),
+    options:{
+        enabledByDefault:false,
+    }
+  })
   server.route([
     {
       method: "GET",
@@ -36,6 +43,17 @@ const init = async () => {
         return "<h1>Page Not Found</h1>";
       },
     },
+    {
+        method: "GET",
+        path: "/location",
+        handler: (req, res) => {
+            if(req.location){
+                return req.location;
+            } else {
+                return `<h1>Location is enabled by default</h1>`
+            }
+        }   
+    }
   ]);
 
   await server.start();
