@@ -1,6 +1,7 @@
 "use strict";
 
 const Hapi = require("@hapi/hapi");
+const { handler } = require("@hapi/inert/lib/file");
 const path = require("path");
 const init = async () => {
   const server = Hapi.Server({
@@ -23,7 +24,21 @@ const init = async () => {
     {
       plugin: require("@hapi/inert"),
     },
+    {
+      plugin: require("@hapi/vision"),
+    },
   ]);
+
+  server.views({
+    engines: {
+      html: require("handlebars"),
+      //  we can also use
+      // hbs in place of html we need to change the file extension as well and then
+      // we will serve using the nodemon -e hbs,js server.js
+    },
+    path: path.join(__dirname, "views"),
+    layout: "default",
+  });
   server.route([
     {
       method: "GET",
@@ -78,7 +93,26 @@ const init = async () => {
       method: "POST",
       path: "/login",
       handler: (request, h) => {
-        
+        if (
+          request.payload.name === "Ahmed" &&
+          request.payload.password === "123"
+        ) {
+          return h.file("logged-in.html");
+        } else {
+          return h.file("not-logged-in.html");
+        }
+      },
+    },
+    {
+      method: "POST",
+      path: "/dynamicLogin",
+      handler: (request, h) => {
+         if (request.payload.name !== "" && request.payload.password) {
+          let data = {name:request.payload.name, password:request.payload.password};
+          return h.view('index',data)
+        } else {
+          return "Nothing found";
+        }
       },
     },
   ]);
