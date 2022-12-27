@@ -1,26 +1,35 @@
 "use strict";
 
 const Hapi = require("@hapi/hapi");
-
-
+const path = require("path");
 const init = async () => {
   const server = Hapi.Server({
     host: "localhost",
     port: 1234,
+    routes: {
+      files: {
+        relativeTo: path.join(__dirname, "static"),
+      },
+    },
   });
-// only hapi plugins will registered within the server
-  await server.register({
-    plugin: require('hapi-geo-locate'),
-    options:{
-        enabledByDefault:false,
-    }
-  })
+  // only hapi plugins will registered within the server
+  await server.register([
+    {
+      plugin: require("hapi-geo-locate"),
+      options: {
+        enabledByDefault: false,
+      },
+    },
+    {
+      plugin: require("@hapi/inert"),
+    },
+  ]);
   server.route([
     {
       method: "GET",
       path: "/",
       handler: (req, res) => {
-        return "<h1>Hello World</h1>";
+        return res.file("welcome.html");
       },
     },
     {
@@ -28,12 +37,12 @@ const init = async () => {
       path: "/users/{user?}",
       // ? means param is optional
       handler: (req, res) => {
-        return res.redirect("/");
+        // return res.redirect("/");
         // req.query.(queryParameterName)
-        //   if (req.params.user) {
-        //     return `<h1>Hello ${req.params.user} has an employee with name ${req.query.name} and last name ${req.query.lastname}</h1>`;
-        //   }
-        //   return `<h1>Hello Stranger</h1>`;
+        if (req.params.user) {
+          return `<h1>Hello ${req.params.user} has an employee with name ${req.query.name} and last name ${req.query.lastname}</h1>`;
+        }
+        return `<h1>Hello Stranger</h1>`;
       },
     },
     {
@@ -44,16 +53,34 @@ const init = async () => {
       },
     },
     {
-        method: "GET",
-        path: "/location",
-        handler: (req, res) => {
-            if(req.location){
-                return req.location;
-            } else {
-                return `<h1>Location is enabled by default</h1>`
-            }
-        }   
-    }
+      method: "GET",
+      path: "/download",
+      handler: (request, h) => {
+        return h.file("welcome.html", {
+          mode: "inline",
+          // mode: "attachment",
+          filename: "Demo.html",
+        });
+      },
+    },
+    {
+      method: "GET",
+      path: "/location",
+      handler: (req, res) => {
+        if (req.location) {
+          return req.location;
+        } else {
+          return `<h1>Location is enabled by default</h1>`;
+        }
+      },
+    },
+    {
+      method: "POST",
+      path: "/login",
+      handler: (request, h) => {
+        
+      },
+    },
   ]);
 
   await server.start();
